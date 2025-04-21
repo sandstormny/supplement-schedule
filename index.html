@@ -31,25 +31,6 @@
     .dark-mode .completion:checked { outline: 2px solid #81c784; background-color: #263238; }
     .sticky-bar { position: sticky; top: 0; background: inherit; padding: 10px 0; z-index: 1000; }
   </style>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCaH78UTfdR4nvSWmWDAgRtre9pNyGo7k4",
-    authDomain: "supplement-tracker-4f40c.firebaseapp.com",
-    projectId: "supplement-tracker-4f40c",
-    storageBucket: "supplement-tracker-4f40c.firebasestorage.app",
-    messagingSenderId: "1093965748",
-    appId: "1:1093965748:web:64e6e8330ba4b150d5c4e1"
-  };
-
-  const app = firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-</script>
-
 </head>
 <body onload="loadTheme()">
 <h2>Supplement Tracker</h2>
@@ -1266,21 +1247,6 @@ function clearAllChecks() {
   });
 }
 function loadTheme() {
-
-document.querySelectorAll('.completion').forEach(cb => {
-  cb.addEventListener('change', () => {
-    const id = cb.getAttribute('data-id');
-    const supplement = cb.getAttribute('data-supplement');
-    const timestamp = new Date().toISOString();
-    db.collection("supplements").doc(id).set({
-      supplement,
-      id,
-      completed: cb.checked,
-      timestamp
-    });
-  });
-});
-
   const savedTheme = localStorage.getItem("theme");
   if (savedTheme === "dark") {
     document.body.classList.add("dark-mode");
@@ -1453,27 +1419,9 @@ document.addEventListener("DOMContentLoaded", () => {
         delete data.end;
         btn.textContent = "Stop";
       } else {
-        
         data.end = new Date().toISOString();
         data.duration = formatDuration(data.start, data.end);
         btn.textContent = "Start";
-        const checkbox = document.querySelector(`.completion[data-id="${id}"]`);
-        if (checkbox) {
-          checkbox.checked = true;
-          const completed = true;
-          const timestamp = new Date().toISOString();
-          localStorage.setItem(id, JSON.stringify({ ...data, completed, timestamp }));
-          db.collection("supplements").doc(id).set({
-            id,
-            supplement,
-            completed,
-            startTime: data.start,
-            endTime: data.end,
-            duration: data.duration,
-            timestamp
-          });
-        }
-
       const checkbox = document.querySelector(`.completion[data-id="${id}"]`);
       if (checkbox) {
         checkbox.checked = true;
