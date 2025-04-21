@@ -1,124 +1,58 @@
-
 <!DOCTYPE html>
 
 <html>
 <head>
 <meta charset="utf-8"/>
-<title>Supplement Schedule (Full Features)</title>
+<title>Supplement Tracker</title>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="manifest.json" rel="manifest"/>
+<script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
 <link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet"/>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            padding: 10px;
-            font-size: 1.05em;
-        }
-        select {
-            font-size: 1.1em;
-            padding: 8px;
-            margin-bottom: 15px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th {
-            background-color: #263238;
-            color: white;
-            padding: 10px;
-        }
-        td {
-            padding: 10px;
-            vertical-align: top;
-            border-bottom: 1px solid #ccc;
-        }
-        .checkbox-col {
-            text-align: center;
-        }
-        .clickable {
-            color: #1565C0;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.6);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 10px;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover, .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .dark-mode {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        .dark-mode table {
-            background-color: #1e1e1e;
-        }
-        .dark-mode th {
-            background-color: #333333 !important;
-        }
-        .dark-mode td {
-            border-color: #555;
-        }
-    </style>
+    body { font-family: sans-serif; padding: 10px; font-size: 1em; transition: background-color 0.3s, color 0.3s; }
+    select { font-size: 1.1em; padding: 8px; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #263238; color: white; padding: 8px; }
+    td { padding: 8px; border-bottom: 1px solid #ccc; }
+    .checkbox-col { text-align: center; }
+    .clickable { cursor: pointer; text-decoration: underline; color: #1565C0; }
+    .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+    .modal-content { background: white; margin: 10% auto; padding: 20px; max-width: 600px; border-radius: 8px; }
+    .close { float: right; font-size: 20px; cursor: pointer; }
+    .dark-mode { background-color: #121212; color: #eee; }
+    .dark-mode .modal-content { background: #1e1e1e; color: #eee; }
+    .completion:checked { outline: 2px solid #4caf50; background-color: #e0f2f1; }
+    .dark-mode .completion:checked { outline: 2px solid #81c784; background-color: #263238; }
+    .sticky-bar { position: sticky; top: 0; background: inherit; padding: 10px 0; z-index: 1000; }
+  </style>
 </head>
 <body onload="loadTheme()">
-<h2>Supplement Schedule</h2>
-<div style="margin-bottom: 10px;">
+<h2>Supplement Tracker</h2>
+<table style="margin-bottom: 15px; font-size: 0.95em;"><thead><tr><th colspan="2">Stack Legend</th></tr></thead><tbody>
+<tr><td>⚡</td><td>Fasted Pre-Workout Stack</td></tr>
+<tr><td>💪</td><td>Post-Workout Recovery Stack</td></tr>
+<tr><td>⏳</td><td>Breakfast Longevity Stack</td></tr>
+<tr><td>🧠</td><td>Midday Performance Stack</td></tr>
+<tr><td>🌙</td><td>Sleep + Recovery Stack</td></tr>
+</tbody></table>
+<div class="sticky-bar">
 <span id="modeStatus" style="margin-right: 1em; font-weight: bold;"></span>
 <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-<button onclick="clearAllChecks()">Clear All Checkmarks</button>
+<button onclick="clearAllChecks()">Clear All</button>
+<button onclick="showCompletedLog()">View Completed Log</button>
 </div>
-<label for="scheduleFilter">Training Day:</label><br/>
-<select id="scheduleFilter"><option value="">All</option><option value="Cardio">Cardio</option><option value="Resistance">Resistance</option><option value="Sunday (Rest)">Sunday (Rest)</option></select>
-<label for="timeFilter">Time:</label><br/>
+<label>Training Day:</label><br/>
+<select id="scheduleFilter"><option value="">All</option><option value="Cardio">Cardio</option><option value="Resistance">Resistance</option><option value="Sunday (rest)">Sunday (rest)</option></select>
+<label>Time:</label><br/>
 <select id="timeFilter"><option value="">All</option><option value="05:30 AM">05:30 AM</option><option value="05:45 AM">05:45 AM</option><option value="06:00 AM">06:00 AM</option><option value="07:00 AM">07:00 AM</option><option value="07:30 AM">07:30 AM</option><option value="08:15 AM">08:15 AM</option><option value="12:35 PM">12:35 PM</option><option value="1:30 PM">1:30 PM</option><option value="08:00 PM">08:00 PM</option><option value="08:30 PM">08:30 PM</option><option value="09:30 PM">09:30 PM</option></select>
 <table class="display" id="scheduleTable">
-<thead>
-<tr>
-<th>✓</th>
-<th>Training Schedule</th>
-<th>Time</th>
-<th>Supplement/Activity</th>
-<th>Stack Label</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_05:30_AM_Collagen" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-0')"><strong>⚡ Collagen</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
+<thead><tr><th>✓</th><th>Day</th><th>Time</th><th>Supplement</th><th>Stack</th><th>Timer</th></tr></thead><tbody><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_05:30_AM_Collagen" data-supplement="Collagen" type="checkbox"/></td><td>Cardio</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-0')">⚡ Collagen</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_05:30_AM_Collagen" data-supplement="Collagen">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_05:30_AM_Hydration" data-supplement="Hydration" type="checkbox"/></td><td>Cardio</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-1')">⚡ Hydration</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_05:30_AM_Hydration" data-supplement="Hydration">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_05:30_AM_Red_Light_Therapy_(Morning)" data-supplement="Red Light Therapy (Morning)" type="checkbox"/></td><td>Cardio</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-2')">⚡ Red Light Therapy (Morning)</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_05:30_AM_Red_Light_Therapy_(Morning)" data-supplement="Red Light Therapy (Morning)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_05:30_AM_Vitamin_C" data-supplement="Vitamin C" type="checkbox"/></td><td>Cardio</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-3')">⚡ Vitamin C</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_05:30_AM_Vitamin_C" data-supplement="Vitamin C">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_05:45_AM_DHEA_(10-25_mg,_optional)" data-supplement="DHEA (10-25 mg, optional)" type="checkbox"/></td><td>Cardio</td><td>05:45 AM</td><td class="clickable" onclick="showModal('modal-4')">⚡ DHEA (10-25 mg, optional)</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_05:45_AM_DHEA_(10-25_mg,_optional)" data-supplement="DHEA (10-25 mg, optional)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_05:45_AM_L-Citrulline_Malate_(4-6g)" data-supplement="L-Citrulline Malate (4-6g)" type="checkbox"/></td><td>Cardio</td><td>05:45 AM</td><td class="clickable" onclick="showModal('modal-5')">⚡ L-Citrulline Malate (4-6g)</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_05:45_AM_L-Citrulline_Malate_(4-6g)" data-supplement="L-Citrulline Malate (4-6g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_05:45_AM_Tongkat_Ali_(200-400_mg)" data-supplement="Tongkat Ali (200-400 mg)" type="checkbox"/></td><td>Cardio</td><td>05:45 AM</td><td class="clickable" onclick="showModal('modal-6')">⚡ Tongkat Ali (200-400 mg)</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_05:45_AM_Tongkat_Ali_(200-400_mg)" data-supplement="Tongkat Ali (200-400 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_06:00_AM_Cardio_(Tuesday/Thursday)" data-supplement="Cardio (Tuesday/Thursday)" type="checkbox"/></td><td>Cardio</td><td>06:00 AM</td><td class="clickable" onclick="showModal('modal-7')">⚡ Cardio (Tuesday/Thursday)</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_06:00_AM_Cardio_(Tuesday/Thursday)" data-supplement="Cardio (Tuesday/Thursday)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:00_AM_Creatine_(2.5_g)" data-supplement="Creatine (2.5 g)" type="checkbox"/></td><td>Cardio</td><td>07:00 AM</td><td class="clickable" onclick="showModal('modal-8')">💪 Creatine (2.5 g)</td><td>💪</td><td><button class="timer-btn" data-id="Cardio_07:00_AM_Creatine_(2.5_g)" data-supplement="Creatine (2.5 g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:00_AM_Protein_Shake_(20-40g)" data-supplement="Protein Shake (20-40g)" type="checkbox"/></td><td>Cardio</td><td>07:00 AM</td><td class="clickable" onclick="showModal('modal-9')">💪 Protein Shake (20-40g)</td><td>💪</td><td><button class="timer-btn" data-id="Cardio_07:00_AM_Protein_Shake_(20-40g)" data-supplement="Protein Shake (20-40g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Amlodipine_(5-10_mg)" data-supplement="Amlodipine (5-10 mg)" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-10')"> Amlodipine (5-10 mg)</td><td></td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Amlodipine_(5-10_mg)" data-supplement="Amlodipine (5-10 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Animal_Pak_(1_pack)" data-supplement="Animal Pak (1 pack)" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-11')">⏳ Animal Pak (1 pack)</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Animal_Pak_(1_pack)" data-supplement="Animal Pak (1 pack)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Ashwagandha_(600_mg_KSM-66)" data-supplement="Ashwagandha (600 mg KSM-66)" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-12')">⏳ Ashwagandha (600 mg KSM-66)</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Ashwagandha_(600_mg_KSM-66)" data-supplement="Ashwagandha (600 mg KSM-66)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Astaxanthin" data-supplement="Astaxanthin" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-13')">⏳ Astaxanthin</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Astaxanthin" data-supplement="Astaxanthin">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Boron_(3-6_mg)" data-supplement="Boron (3-6 mg)" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-14')">⏳ Boron (3-6 mg)</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Boron_(3-6_mg)" data-supplement="Boron (3-6 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_CoQ10_(Ubiquinol)" data-supplement="CoQ10 (Ubiquinol)" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-15')">⏳ CoQ10 (Ubiquinol)</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_CoQ10_(Ubiquinol)" data-supplement="CoQ10 (Ubiquinol)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Fat-Soluble_Supplements" data-supplement="Fat-Soluble Supplements" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-16')">⏳ Fat-Soluble Supplements</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Fat-Soluble_Supplements" data-supplement="Fat-Soluble Supplements">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Fish/Krill_Oil" data-supplement="Fish/Krill Oil" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-17')">⏳ Fish/Krill Oil</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Fish/Krill_Oil" data-supplement="Fish/Krill Oil">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" data-supplement="TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-18')">⏳ TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" data-supplement="TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Vitamin_D3" data-supplement="Vitamin D3" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-19')">⏳ Vitamin D3</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Vitamin_D3" data-supplement="Vitamin D3">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" data-supplement="Vitamin K2 (MK-4 + MK-7)" type="checkbox"/></td><td>Cardio</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-20')">⏳ Vitamin K2 (MK-4 + MK-7)</td><td>⏳</td><td><button class="timer-btn" data-id="Cardio_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" data-supplement="Vitamin K2 (MK-4 + MK-7)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:15_AM_Lion" data-supplement="Lion" s_mane_mushroom_(500-1000_mg)'="" type="checkbox"/></td><td>Cardio</td><td>08:15 AM</td><td class="clickable" onclick="showModal('modal-21')"> Lion's Mane Mushroom (500-1000 mg)</td><td></td><td><button class="timer-btn" data-id="Cardio_08:15_AM_Lion" data-supplement="Lion">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" data-supplement="Berberine Phytosome (Feel Good Superfoods)" type="checkbox"/></td><td>Cardio</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-22')"> Berberine Phytosome (Feel Good Superfoods)</td><td></td><td><button class="timer-btn" data-id="Cardio_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" data-supplement="Berberine Phytosome (Feel Good Superfoods)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" data-supplement="BroccoMax (Sulforaphane Precursor)" type="checkbox"/></td><td>Cardio</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-23')"> BroccoMax (Sulforaphane Precursor)</td><td></td><td><button class="timer-btn" data-id="Cardio_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" data-supplement="BroccoMax (Sulforaphane Precursor)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_12:35_PM_Lutein_(10-20_mg)" data-supplement="Lutein (10-20 mg)" type="checkbox"/></td><td>Cardio</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-24')"> Lutein (10-20 mg)</td><td></td><td><button class="timer-btn" data-id="Cardio_12:35_PM_Lutein_(10-20_mg)" data-supplement="Lutein (10-20 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" data-supplement="Niacinamide (Vitamin B3, 250-500 mg)" type="checkbox"/></td><td>Cardio</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-25')"> Niacinamide (Vitamin B3, 250-500 mg)</td><td></td><td><button class="timer-btn" data-id="Cardio_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" data-supplement="Niacinamide (Vitamin B3, 250-500 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_12:35_PM_Zeaxanthin_(6-10_mg)" data-supplement="Zeaxanthin (6-10 mg)" type="checkbox"/></td><td>Cardio</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-26')"> Zeaxanthin (6-10 mg)</td><td></td><td><button class="timer-btn" data-id="Cardio_12:35_PM_Zeaxanthin_(6-10_mg)" data-supplement="Zeaxanthin (6-10 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_1:30_PM_NAC_(600-1200_mg)" data-supplement="NAC (600-1200 mg)" type="checkbox"/></td><td>Cardio</td><td>1:30 PM</td><td class="clickable" onclick="showModal('modal-27')"> NAC (600-1200 mg)</td><td></td><td><button class="timer-btn" data-id="Cardio_1:30_PM_NAC_(600-1200_mg)" data-supplement="NAC (600-1200 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" data-supplement="UC-II® Undenatured Type II Collagen (40 mg)" type="checkbox"/></td><td>Cardio</td><td>08:00 PM</td><td class="clickable" onclick="showModal('modal-28')">⚡ UC-II® Undenatured Type II Collagen (40 mg)</td><td>⚡</td><td><button class="timer-btn" data-id="Cardio_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" data-supplement="UC-II® Undenatured Type II Collagen (40 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Apigenin_(optional)" data-supplement="Apigenin (optional)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-29')">🌙 Apigenin (optional)</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Apigenin_(optional)" data-supplement="Apigenin (optional)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Berberine_(Standard,_500_mg)" data-supplement="Berberine (Standard, 500 mg)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-30')"> Berberine (Standard, 500 mg)</td><td></td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Berberine_(Standard,_500_mg)" data-supplement="Berberine (Standard, 500 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Casein_Protein_(30-40g)" data-supplement="Casein Protein (30-40g)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-31')">🌙 Casein Protein (30-40g)</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Casein_Protein_(30-40g)" data-supplement="Casein Protein (30-40g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Fish_Oil_(PM_Dose)" data-supplement="Fish Oil (PM Dose)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-32')">🌙 Fish Oil (PM Dose)</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Fish_Oil_(PM_Dose)" data-supplement="Fish Oil (PM Dose)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Glycine_(3g)" data-supplement="Glycine (3g)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-33')">🌙 Glycine (3g)</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Glycine_(3g)" data-supplement="Glycine (3g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Kyolic_Garlic" data-supplement="Kyolic Garlic" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-34')">🌙 Kyolic Garlic</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Kyolic_Garlic" data-supplement="Kyolic Garlic">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_L-Theanine" data-supplement="L-Theanine" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-35')">🌙 L-Theanine</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_L-Theanine" data-supplement="L-Theanine">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Lithium_Orotate_(5_mg)" data-supplement="Lithium Orotate (5 mg)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-36')">🌙 Lithium Orotate (5 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Lithium_Orotate_(5_mg)" data-supplement="Lithium Orotate (5 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Magnesium_Glycinate" data-supplement="Magnesium Glycinate" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-37')">🌙 Magnesium Glycinate</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Magnesium_Glycinate" data-supplement="Magnesium Glycinate">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Melatonin_(0.3-1_mg)" data-supplement="Melatonin (0.3-1 mg)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-38')">🌙 Melatonin (0.3-1 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Melatonin_(0.3-1_mg)" data-supplement="Melatonin (0.3-1 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_08:30_PM_Nattokinase_(100-200_mg)" data-supplement="Nattokinase (100-200 mg)" type="checkbox"/></td><td>Cardio</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-39')">🌙 Nattokinase (100-200 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_08:30_PM_Nattokinase_(100-200_mg)" data-supplement="Nattokinase (100-200 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Cardio_09:30_PM_Bedtime" data-supplement="Bedtime" type="checkbox"/></td><td>Cardio</td><td>09:30 PM</td><td class="clickable" onclick="showModal('modal-40')">🌙 Bedtime</td><td>🌙</td><td><button class="timer-btn" data-id="Cardio_09:30_PM_Bedtime" data-supplement="Bedtime">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_05:30_AM_Collagen" data-supplement="Collagen" type="checkbox"/></td><td>Resistance</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-41')">⚡ Collagen</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_05:30_AM_Collagen" data-supplement="Collagen">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_05:30_AM_Hydration" data-supplement="Hydration" type="checkbox"/></td><td>Resistance</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-42')">⚡ Hydration</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_05:30_AM_Hydration" data-supplement="Hydration">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_05:30_AM_Red_Light_Therapy_(Morning)" data-supplement="Red Light Therapy (Morning)" type="checkbox"/></td><td>Resistance</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-43')">⚡ Red Light Therapy (Morning)</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_05:30_AM_Red_Light_Therapy_(Morning)" data-supplement="Red Light Therapy (Morning)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_05:30_AM_Vitamin_C" data-supplement="Vitamin C" type="checkbox"/></td><td>Resistance</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-44')">⚡ Vitamin C</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_05:30_AM_Vitamin_C" data-supplement="Vitamin C">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_05:45_AM_DHEA_(10-25_mg,_optional)" data-supplement="DHEA (10-25 mg, optional)" type="checkbox"/></td><td>Resistance</td><td>05:45 AM</td><td class="clickable" onclick="showModal('modal-45')">⚡ DHEA (10-25 mg, optional)</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_05:45_AM_DHEA_(10-25_mg,_optional)" data-supplement="DHEA (10-25 mg, optional)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_05:45_AM_Tongkat_Ali_(200-400_mg)" data-supplement="Tongkat Ali (200-400 mg)" type="checkbox"/></td><td>Resistance</td><td>05:45 AM</td><td class="clickable" onclick="showModal('modal-46')">⚡ Tongkat Ali (200-400 mg)</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_05:45_AM_Tongkat_Ali_(200-400_mg)" data-supplement="Tongkat Ali (200-400 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_05:45_AM_Transparent_Labs_Bulk" data-supplement="Transparent Labs Bulk" type="checkbox"/></td><td>Resistance</td><td>05:45 AM</td><td class="clickable" onclick="showModal('modal-47')">⚡ Transparent Labs Bulk</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_05:45_AM_Transparent_Labs_Bulk" data-supplement="Transparent Labs Bulk">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_06:00_AM_Fasted_Resistance_Training_(Mon/Wed/Fri/Sat)" data-supplement="Fasted Resistance Training (Mon/Wed/Fri/Sat)" type="checkbox"/></td><td>Resistance</td><td>06:00 AM</td><td class="clickable" onclick="showModal('modal-48')">⚡ Fasted Resistance Training (Mon/Wed/Fri/Sat)</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_06:00_AM_Fasted_Resistance_Training_(Mon/Wed/Fri/Sat)" data-supplement="Fasted Resistance Training (Mon/Wed/Fri/Sat)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:00_AM_Creatine_(2.5_g)" data-supplement="Creatine (2.5 g)" type="checkbox"/></td><td>Resistance</td><td>07:00 AM</td><td class="clickable" onclick="showModal('modal-49')">💪 Creatine (2.5 g)</td><td>💪</td><td><button class="timer-btn" data-id="Resistance_07:00_AM_Creatine_(2.5_g)" data-supplement="Creatine (2.5 g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:00_AM_Protein_Shake_(20-40g)" data-supplement="Protein Shake (20-40g)" type="checkbox"/></td><td>Resistance</td><td>07:00 AM</td><td class="clickable" onclick="showModal('modal-50')">💪 Protein Shake (20-40g)</td><td>💪</td><td><button class="timer-btn" data-id="Resistance_07:00_AM_Protein_Shake_(20-40g)" data-supplement="Protein Shake (20-40g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Amlodipine_(5-10_mg)" data-supplement="Amlodipine (5-10 mg)" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-51')"> Amlodipine (5-10 mg)</td><td></td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Amlodipine_(5-10_mg)" data-supplement="Amlodipine (5-10 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Animal_Pak_(1_pack)" data-supplement="Animal Pak (1 pack)" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-52')">⏳ Animal Pak (1 pack)</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Animal_Pak_(1_pack)" data-supplement="Animal Pak (1 pack)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Ashwagandha_(600_mg_KSM-66)" data-supplement="Ashwagandha (600 mg KSM-66)" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-53')">⏳ Ashwagandha (600 mg KSM-66)</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Ashwagandha_(600_mg_KSM-66)" data-supplement="Ashwagandha (600 mg KSM-66)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Astaxanthin" data-supplement="Astaxanthin" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-54')">⏳ Astaxanthin</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Astaxanthin" data-supplement="Astaxanthin">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Boron_(3-6_mg)" data-supplement="Boron (3-6 mg)" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-55')">⏳ Boron (3-6 mg)</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Boron_(3-6_mg)" data-supplement="Boron (3-6 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_CoQ10_(Ubiquinol)" data-supplement="CoQ10 (Ubiquinol)" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-56')">⏳ CoQ10 (Ubiquinol)</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_CoQ10_(Ubiquinol)" data-supplement="CoQ10 (Ubiquinol)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Fat-Soluble_Supplements" data-supplement="Fat-Soluble Supplements" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-57')">⏳ Fat-Soluble Supplements</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Fat-Soluble_Supplements" data-supplement="Fat-Soluble Supplements">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Fish/Krill_Oil" data-supplement="Fish/Krill Oil" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-58')">⏳ Fish/Krill Oil</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Fish/Krill_Oil" data-supplement="Fish/Krill Oil">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" data-supplement="TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-59')">⏳ TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" data-supplement="TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Vitamin_D3" data-supplement="Vitamin D3" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-60')">⏳ Vitamin D3</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Vitamin_D3" data-supplement="Vitamin D3">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" data-supplement="Vitamin K2 (MK-4 + MK-7)" type="checkbox"/></td><td>Resistance</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-61')">⏳ Vitamin K2 (MK-4 + MK-7)</td><td>⏳</td><td><button class="timer-btn" data-id="Resistance_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" data-supplement="Vitamin K2 (MK-4 + MK-7)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:15_AM_Lion" data-supplement="Lion" s_mane_mushroom_(500-1000_mg)'="" type="checkbox"/></td><td>Resistance</td><td>08:15 AM</td><td class="clickable" onclick="showModal('modal-62')"> Lion's Mane Mushroom (500-1000 mg)</td><td></td><td><button class="timer-btn" data-id="Resistance_08:15_AM_Lion" data-supplement="Lion">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" data-supplement="Berberine Phytosome (Feel Good Superfoods)" type="checkbox"/></td><td>Resistance</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-63')"> Berberine Phytosome (Feel Good Superfoods)</td><td></td><td><button class="timer-btn" data-id="Resistance_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" data-supplement="Berberine Phytosome (Feel Good Superfoods)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" data-supplement="BroccoMax (Sulforaphane Precursor)" type="checkbox"/></td><td>Resistance</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-64')"> BroccoMax (Sulforaphane Precursor)</td><td></td><td><button class="timer-btn" data-id="Resistance_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" data-supplement="BroccoMax (Sulforaphane Precursor)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_12:35_PM_Lutein_(10-20_mg)" data-supplement="Lutein (10-20 mg)" type="checkbox"/></td><td>Resistance</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-65')"> Lutein (10-20 mg)</td><td></td><td><button class="timer-btn" data-id="Resistance_12:35_PM_Lutein_(10-20_mg)" data-supplement="Lutein (10-20 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" data-supplement="Niacinamide (Vitamin B3, 250-500 mg)" type="checkbox"/></td><td>Resistance</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-66')"> Niacinamide (Vitamin B3, 250-500 mg)</td><td></td><td><button class="timer-btn" data-id="Resistance_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" data-supplement="Niacinamide (Vitamin B3, 250-500 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_12:35_PM_Zeaxanthin_(6-10_mg)" data-supplement="Zeaxanthin (6-10 mg)" type="checkbox"/></td><td>Resistance</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-67')"> Zeaxanthin (6-10 mg)</td><td></td><td><button class="timer-btn" data-id="Resistance_12:35_PM_Zeaxanthin_(6-10_mg)" data-supplement="Zeaxanthin (6-10 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_1:30_PM_NAC_(600-1200_mg)" data-supplement="NAC (600-1200 mg)" type="checkbox"/></td><td>Resistance</td><td>1:30 PM</td><td class="clickable" onclick="showModal('modal-68')"> NAC (600-1200 mg)</td><td></td><td><button class="timer-btn" data-id="Resistance_1:30_PM_NAC_(600-1200_mg)" data-supplement="NAC (600-1200 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" data-supplement="UC-II® Undenatured Type II Collagen (40 mg)" type="checkbox"/></td><td>Resistance</td><td>08:00 PM</td><td class="clickable" onclick="showModal('modal-69')">⚡ UC-II® Undenatured Type II Collagen (40 mg)</td><td>⚡</td><td><button class="timer-btn" data-id="Resistance_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" data-supplement="UC-II® Undenatured Type II Collagen (40 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Apigenin_(optional)" data-supplement="Apigenin (optional)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-70')">🌙 Apigenin (optional)</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Apigenin_(optional)" data-supplement="Apigenin (optional)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Berberine_(Standard,_500_mg)" data-supplement="Berberine (Standard, 500 mg)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-71')"> Berberine (Standard, 500 mg)</td><td></td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Berberine_(Standard,_500_mg)" data-supplement="Berberine (Standard, 500 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Casein_Protein_(30-40g)" data-supplement="Casein Protein (30-40g)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-72')">🌙 Casein Protein (30-40g)</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Casein_Protein_(30-40g)" data-supplement="Casein Protein (30-40g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Fish_Oil_(PM_Dose)" data-supplement="Fish Oil (PM Dose)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-73')">🌙 Fish Oil (PM Dose)</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Fish_Oil_(PM_Dose)" data-supplement="Fish Oil (PM Dose)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Glycine_(3g)" data-supplement="Glycine (3g)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-74')">🌙 Glycine (3g)</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Glycine_(3g)" data-supplement="Glycine (3g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Kyolic_Garlic" data-supplement="Kyolic Garlic" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-75')">🌙 Kyolic Garlic</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Kyolic_Garlic" data-supplement="Kyolic Garlic">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_L-Theanine" data-supplement="L-Theanine" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-76')">🌙 L-Theanine</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_L-Theanine" data-supplement="L-Theanine">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Lithium_Orotate_(5_mg)" data-supplement="Lithium Orotate (5 mg)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-77')">🌙 Lithium Orotate (5 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Lithium_Orotate_(5_mg)" data-supplement="Lithium Orotate (5 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Magnesium_Glycinate" data-supplement="Magnesium Glycinate" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-78')">🌙 Magnesium Glycinate</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Magnesium_Glycinate" data-supplement="Magnesium Glycinate">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Melatonin_(0.3-1_mg)" data-supplement="Melatonin (0.3-1 mg)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-79')">🌙 Melatonin (0.3-1 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Melatonin_(0.3-1_mg)" data-supplement="Melatonin (0.3-1 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_08:30_PM_Nattokinase_(100-200_mg)" data-supplement="Nattokinase (100-200 mg)" type="checkbox"/></td><td>Resistance</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-80')">🌙 Nattokinase (100-200 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_08:30_PM_Nattokinase_(100-200_mg)" data-supplement="Nattokinase (100-200 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Resistance_09:30_PM_Bedtime" data-supplement="Bedtime" type="checkbox"/></td><td>Resistance</td><td>09:30 PM</td><td class="clickable" onclick="showModal('modal-81')">🌙 Bedtime</td><td>🌙</td><td><button class="timer-btn" data-id="Resistance_09:30_PM_Bedtime" data-supplement="Bedtime">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_05:30_AM_Collagen" data-supplement="AM Collagen" type="checkbox"/></td><td>Sunday (rest)</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-82')">⚡ Collagen</td><td>⚡</td><td><button class="timer-btn" data-id="Sunday_(rest)_05:30_AM_Collagen" data-supplement="AM Collagen">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_05:30_AM_Vitamin_C" data-supplement="AM Vitamin C" type="checkbox"/></td><td>Sunday (rest)</td><td>05:30 AM</td><td class="clickable" onclick="showModal('modal-83')">⚡ Vitamin C</td><td>⚡</td><td><button class="timer-btn" data-id="Sunday_(rest)_05:30_AM_Vitamin_C" data-supplement="AM Vitamin C">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:00_AM_Creatine_(2.5_g)" data-supplement="AM Creatine (2.5 g)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:00 AM</td><td class="clickable" onclick="showModal('modal-84')">💪 Creatine (2.5 g)</td><td>💪</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:00_AM_Creatine_(2.5_g)" data-supplement="AM Creatine (2.5 g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:00_AM_Protein_Shake_(20-40g)" data-supplement="AM Protein Shake (20-40g)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:00 AM</td><td class="clickable" onclick="showModal('modal-85')">💪 Protein Shake (20-40g)</td><td>💪</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:00_AM_Protein_Shake_(20-40g)" data-supplement="AM Protein Shake (20-40g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:00_AM_Red_Light_Therapy_(Morning)" data-supplement="AM Red Light Therapy (Morning)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:00 AM</td><td class="clickable" onclick="showModal('modal-86')">⚡ Red Light Therapy (Morning)</td><td>⚡</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:00_AM_Red_Light_Therapy_(Morning)" data-supplement="AM Red Light Therapy (Morning)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Amlodipine_(5-10_mg)" data-supplement="AM Amlodipine (5-10 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-87')"> Amlodipine (5-10 mg)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Amlodipine_(5-10_mg)" data-supplement="AM Amlodipine (5-10 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Animal_Pak_(1_pack)" data-supplement="AM Animal Pak (1 pack)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-88')">⏳ Animal Pak (1 pack)</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Animal_Pak_(1_pack)" data-supplement="AM Animal Pak (1 pack)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Ashwagandha_(600_mg_KSM-66)" data-supplement="AM Ashwagandha (600 mg KSM-66)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-89')">⏳ Ashwagandha (600 mg KSM-66)</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Ashwagandha_(600_mg_KSM-66)" data-supplement="AM Ashwagandha (600 mg KSM-66)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Astaxanthin" data-supplement="AM Astaxanthin" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-90')">⏳ Astaxanthin</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Astaxanthin" data-supplement="AM Astaxanthin">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Boron_(3-6_mg)" data-supplement="AM Boron (3-6 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-91')">⏳ Boron (3-6 mg)</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Boron_(3-6_mg)" data-supplement="AM Boron (3-6 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_CoQ10_(Ubiquinol)" data-supplement="AM CoQ10 (Ubiquinol)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-92')">⏳ CoQ10 (Ubiquinol)</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_CoQ10_(Ubiquinol)" data-supplement="AM CoQ10 (Ubiquinol)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Fat-Soluble_Supplements" data-supplement="AM Fat-Soluble Supplements" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-93')">⏳ Fat-Soluble Supplements</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Fat-Soluble_Supplements" data-supplement="AM Fat-Soluble Supplements">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Fish/Krill_Oil" data-supplement="AM Fish/Krill Oil" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-94')">⏳ Fish/Krill Oil</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Fish/Krill_Oil" data-supplement="AM Fish/Krill Oil">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" data-supplement="AM TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-95')">⏳ TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" data-supplement="AM TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Vitamin_D3" data-supplement="AM Vitamin D3" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-96')">⏳ Vitamin D3</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Vitamin_D3" data-supplement="AM Vitamin D3">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" data-supplement="AM Vitamin K2 (MK-4 + MK-7)" type="checkbox"/></td><td>Sunday (rest)</td><td>07:30 AM</td><td class="clickable" onclick="showModal('modal-97')">⏳ Vitamin K2 (MK-4 + MK-7)</td><td>⏳</td><td><button class="timer-btn" data-id="Sunday_(rest)_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" data-supplement="AM Vitamin K2 (MK-4 + MK-7)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:15_AM_Lion" data-supplement="AM Lion" s_mane_mushroom_(500-1000_mg)'="" type="checkbox"/></td><td>Sunday (rest)</td><td>08:15 AM</td><td class="clickable" onclick="showModal('modal-98')"> Lion's Mane Mushroom (500-1000 mg)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_08:15_AM_Lion" data-supplement="AM Lion">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" data-supplement="PM Berberine Phytosome (Feel Good Superfoods)" type="checkbox"/></td><td>Sunday (rest)</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-99')"> Berberine Phytosome (Feel Good Superfoods)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" data-supplement="PM Berberine Phytosome (Feel Good Superfoods)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" data-supplement="PM BroccoMax (Sulforaphane Precursor)" type="checkbox"/></td><td>Sunday (rest)</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-100')"> BroccoMax (Sulforaphane Precursor)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" data-supplement="PM BroccoMax (Sulforaphane Precursor)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_12:35_PM_Lutein_(10-20_mg)" data-supplement="PM Lutein (10-20 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-101')"> Lutein (10-20 mg)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_12:35_PM_Lutein_(10-20_mg)" data-supplement="PM Lutein (10-20 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" data-supplement="PM Niacinamide (Vitamin B3, 250-500 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-102')"> Niacinamide (Vitamin B3, 250-500 mg)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" data-supplement="PM Niacinamide (Vitamin B3, 250-500 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_12:35_PM_Zeaxanthin_(6-10_mg)" data-supplement="PM Zeaxanthin (6-10 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>12:35 PM</td><td class="clickable" onclick="showModal('modal-103')"> Zeaxanthin (6-10 mg)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_12:35_PM_Zeaxanthin_(6-10_mg)" data-supplement="PM Zeaxanthin (6-10 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_1:30_PM_NAC_(600-1200_mg)" data-supplement="PM NAC (600-1200 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>1:30 PM</td><td class="clickable" onclick="showModal('modal-104')"> NAC (600-1200 mg)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_1:30_PM_NAC_(600-1200_mg)" data-supplement="PM NAC (600-1200 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" data-supplement="PM UC-II® Undenatured Type II Collagen (40 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:00 PM</td><td class="clickable" onclick="showModal('modal-105')">⚡ UC-II® Undenatured Type II Collagen (40 mg)</td><td>⚡</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" data-supplement="PM UC-II® Undenatured Type II Collagen (40 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Apigenin_(optional)" data-supplement="PM Apigenin (optional)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-106')">🌙 Apigenin (optional)</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Apigenin_(optional)" data-supplement="PM Apigenin (optional)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Berberine_(Standard,_500_mg)" data-supplement="PM Berberine (Standard, 500 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-107')"> Berberine (Standard, 500 mg)</td><td></td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Berberine_(Standard,_500_mg)" data-supplement="PM Berberine (Standard, 500 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Casein_Protein_(30-40g)" data-supplement="PM Casein Protein (30-40g)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-108')">🌙 Casein Protein (30-40g)</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Casein_Protein_(30-40g)" data-supplement="PM Casein Protein (30-40g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Fish_Oil_(PM_Dose)" data-supplement="PM Fish Oil (PM Dose)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-109')">🌙 Fish Oil (PM Dose)</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Fish_Oil_(PM_Dose)" data-supplement="PM Fish Oil (PM Dose)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Glycine_(3g)" data-supplement="PM Glycine (3g)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-110')">🌙 Glycine (3g)</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Glycine_(3g)" data-supplement="PM Glycine (3g)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Kyolic_Garlic" data-supplement="PM Kyolic Garlic" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-111')">🌙 Kyolic Garlic</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Kyolic_Garlic" data-supplement="PM Kyolic Garlic">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_L-Theanine" data-supplement="PM L-Theanine" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-112')">🌙 L-Theanine</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_L-Theanine" data-supplement="PM L-Theanine">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Lithium_Orotate_(5_mg)" data-supplement="PM Lithium Orotate (5 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-113')">🌙 Lithium Orotate (5 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Lithium_Orotate_(5_mg)" data-supplement="PM Lithium Orotate (5 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Magnesium_Glycinate" data-supplement="PM Magnesium Glycinate" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-114')">🌙 Magnesium Glycinate</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Magnesium_Glycinate" data-supplement="PM Magnesium Glycinate">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Melatonin_(0.3-1_mg)" data-supplement="PM Melatonin (0.3-1 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-115')">🌙 Melatonin (0.3-1 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Melatonin_(0.3-1_mg)" data-supplement="PM Melatonin (0.3-1 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_08:30_PM_Nattokinase_(100-200_mg)" data-supplement="PM Nattokinase (100-200 mg)" type="checkbox"/></td><td>Sunday (rest)</td><td>08:30 PM</td><td class="clickable" onclick="showModal('modal-116')">🌙 Nattokinase (100-200 mg)</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_08:30_PM_Nattokinase_(100-200_mg)" data-supplement="PM Nattokinase (100-200 mg)">Start</button></td></tr><tr><td class="checkbox-col"><input class="completion" data-id="Sunday_(rest)_09:30_PM_Bedtime" data-supplement="PM Bedtime" type="checkbox"/></td><td>Sunday (rest)</td><td>09:30 PM</td><td class="clickable" onclick="showModal('modal-117')">🌙 Bedtime</td><td>🌙</td><td><button class="timer-btn" data-id="Sunday_(rest)_09:30_PM_Bedtime" data-supplement="PM Bedtime">Start</button></td></tr></tbody></table>
 <div class="modal" id="modal-0">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-0')">×</span>
@@ -126,17 +60,9 @@
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports collagen synthesis and connective tissue integrity (skin, joints, tendons)</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_05:30_AM_Hydration" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-1')"><strong>⚡ Hydration</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-1">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-1')">×</span>
@@ -144,17 +70,9 @@
 <p><strong>Instructions:</strong><br/>1 glass water with electrolytes or sea salt + lemon before training</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports fluid balance, thermoregulation, and muscle function during fasted training</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_05:30_AM_Red_Light_Therapy_(Morning)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-2')"><strong>⚡ Red Light Therapy (Morning)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-2">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-2')">×</span>
@@ -162,17 +80,9 @@
 <p><strong>Instructions:</strong><br/>Use pre-resistance on resistance days or post-cardio on cardio days; 6-12 inches for 5-10 min</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances mitochondrial function and recovery; may support circadian rhythm</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_05:30_AM_Vitamin_C" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-3')"><strong>⚡ Vitamin C</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-3">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-3')">×</span>
@@ -180,17 +90,9 @@
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances collagen hydroxylation and antioxidant protection; supports immune function</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_05:45_AM_DHEA_(10-25_mg,_optional)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>05:45 AM</td>
-<td class="clickable" onclick="showModal('modal-4')"><strong>⚡ DHEA (10-25 mg, optional)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-4">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-4')">×</span>
@@ -198,71 +100,39 @@
 <p><strong>Instructions:</strong><br/>Take fasted; cycle 6-12 weeks on with lab monitoring</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports hormone balance, mood, and resilience in aging adults; monitor with labs</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_05:45_AM_L-Citrulline_Malate_(4-6g)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>05:45 AM</td>
-<td class="clickable" onclick="showModal('modal-5')"><strong> L-Citrulline Malate (4-6g)</strong></td>
-<td> Fasted Pre-Cardio/Training Stack</td>
-</tr>
 <div class="modal" id="modal-5">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-5')">×</span>
-<h3> L-Citrulline Malate (4-6g)</h3>
+<h3>⚡ L-Citrulline Malate (4-6g)</h3>
 <p><strong>Instructions:</strong><br/>Take 15-30 minutes before training with water</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves nitric oxide production, blood flow, endurance, and reduces muscle soreness</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_05:45_AM_Tongkat_Ali_(200-400_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>05:45 AM</td>
-<td class="clickable" onclick="showModal('modal-6')"><strong> Tongkat Ali (200-400 mg)</strong></td>
-<td> Fasted Pre-Cardio/Training Stack</td>
-</tr>
 <div class="modal" id="modal-6">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-6')">×</span>
-<h3> Tongkat Ali (200-400 mg)</h3>
+<h3>⚡ Tongkat Ali (200-400 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take fasted; cycle 8-12 weeks on, 2-4 weeks off</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports natural testosterone levels and stress resilience</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_06:00_AM_Cardio_(Tuesday/Thursday)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>06:00 AM</td>
-<td class="clickable" onclick="showModal('modal-7')"><strong> Cardio (Tuesday/Thursday)</strong></td>
-<td> Fasted Pre-Cardio/Training Stack</td>
-</tr>
 <div class="modal" id="modal-7">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-7')">×</span>
-<h3> Cardio (Tuesday/Thursday)</h3>
+<h3>⚡ Cardio (Tuesday/Thursday)</h3>
 <p><strong>Instructions:</strong><br/>Fasted</p>
 <p><strong>Benefits/Notes:</strong><br/>Strength &amp; hypertrophy; occurs on Mon/Wed/Fri/Sat</p>
 <p><strong>Tier:</strong><br/>–</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:00_AM_Creatine_(2.5_g)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:00 AM</td>
-<td class="clickable" onclick="showModal('modal-8')"><strong>💪 Creatine (2.5 g)</strong></td>
-<td>💪 Post-Workout Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-8">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-8')">×</span>
@@ -270,17 +140,9 @@
 <p><strong>Instructions:</strong><br/>Take 2.5 g fasted, repeat post-workout if split dosing</p>
 <p><strong>Benefits/Notes:</strong><br/>Increases ATP regeneration and performance in high-intensity training; supports muscle and strength gains</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Post-Workout Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:00_AM_Protein_Shake_(20-40g)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:00 AM</td>
-<td class="clickable" onclick="showModal('modal-9')"><strong>💪 Protein Shake (20-40g)</strong></td>
-<td>💪 Post-Workout Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-9">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-9')">×</span>
@@ -288,17 +150,9 @@
 <p><strong>Instructions:</strong><br/>Post-workout recovery</p>
 <p><strong>Benefits/Notes:</strong><br/>Rapidly delivers amino acids post-workout to stimulate muscle protein synthesis and recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Post-Workout Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Amlodipine_(5-10_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-10')"><strong> Amlodipine (5-10 mg)</strong></td>
-<td> Medication</td>
-</tr>
 <div class="modal" id="modal-10">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-10')">×</span>
@@ -306,17 +160,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Lowers blood pressure via calcium channel blockade; no known direct hormonal impact</p>
 <p><strong>Tier:</strong><br/>Medication</p>
+<p><strong>Stack:</strong><br/>Medication</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Animal_Pak_(1_pack)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-11')"><strong>⏳ Animal Pak (1 pack)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-11">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-11')">×</span>
@@ -324,17 +170,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Comprehensive multivitamin/mineral support for energy production, immune function, and training recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Ashwagandha_(600_mg_KSM-66)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-12')"><strong>⏳ Ashwagandha (600 mg KSM-66)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-12">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-12')">×</span>
@@ -342,17 +180,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Astaxanthin" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-13')"><strong>⏳ Astaxanthin</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-13">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-13')">×</span>
@@ -360,17 +190,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Potent antioxidant supporting skin, eye, cardiovascular, and brain health</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Boron_(3-6_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-14')"><strong>⏳ Boron (3-6 mg)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-14">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-14')">×</span>
@@ -378,17 +200,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_CoQ10_(Ubiquinol)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-15')"><strong>⏳ CoQ10 (Ubiquinol)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-15">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-15')">×</span>
@@ -396,17 +210,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances mitochondrial function and cardiovascular energy metabolism</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Fat-Soluble_Supplements" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-16')"><strong>⏳ Fat-Soluble Supplements</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-16">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-16')">×</span>
@@ -414,17 +220,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Placeholder row; consider removing or listing specific fat-soluble supplements (e.g., D3, K2, A, E)</p>
 <p><strong>Tier:</strong><br/>Remove or Replace</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Fish/Krill_Oil" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-17')"><strong>⏳ Fish/Krill Oil</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-17">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-17')">×</span>
@@ -432,17 +230,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-18')"><strong>⏳ TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-18">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-18')">×</span>
@@ -450,17 +240,9 @@
 <p><strong>Instructions:</strong><br/>Take with food as part of Breakfast Longevity Stack</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports prostate health and urinary function; rich in antioxidant phytonutrients</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Vitamin_D3" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-19')"><strong>⏳ Vitamin D3</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-19">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-19')">×</span>
@@ -468,17 +250,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-20')"><strong>⏳ Vitamin K2 (MK-4 + MK-7)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-20">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-20')">×</span>
@@ -486,17 +260,9 @@
 <p><strong>Instructions:</strong><br/>Take with a fat-containing meal (e.g., breakfast) for optimal absorption</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports calcium metabolism and bone/arterial health; MK-4 provides acute action, MK-7 long-lasting effects</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:15_AM_Lion's_Mane_Mushroom_(500-1000_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:15 AM</td>
-<td class="clickable" onclick="showModal('modal-21')"><strong> Lion's Mane Mushroom (500-1000 mg)</strong></td>
-<td> Optional Nootropic Stack</td>
-</tr>
 <div class="modal" id="modal-21">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-21')">×</span>
@@ -504,17 +270,9 @@
 <p><strong>Instructions:</strong><br/>Take with or without food, ideally in the AM or with nootropic stack</p>
 <p><strong>Benefits/Notes:</strong><br/>Promotes neurogenesis, cognitive clarity, memory, and brain resilience</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Optional Nootropic Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-22')"><strong> Berberine Phytosome (Feel Good Superfoods)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-22">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-22')">×</span>
@@ -522,17 +280,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; post-lunch for glucose control and AMPK activation</p>
 <p><strong>Benefits/Notes:</strong><br/>Activates AMPK, supports insulin sensitivity, glucose metabolism, and healthy aging</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-23')"><strong> BroccoMax (Sulforaphane Precursor)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-23">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-23')">×</span>
@@ -540,17 +290,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Provides sulforaphane to activate NRF2 pathway; supports detoxification and cellular protection</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_12:35_PM_Lutein_(10-20_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-24')"><strong> Lutein (10-20 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-24">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-24')">×</span>
@@ -558,17 +300,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Protects against blue light and oxidative stress in the retina; ideal for high screen time</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-25')"><strong> Niacinamide (Vitamin B3, 250-500 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-25">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-25')">×</span>
@@ -576,17 +310,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports NAD+ regeneration and mitochondrial health; beneficial for metabolism and skin</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_12:35_PM_Zeaxanthin_(6-10_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-26')"><strong> Zeaxanthin (6-10 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-26">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-26')">×</span>
@@ -594,17 +320,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Synergistic with lutein to protect macula and enhance visual performance in screen-intensive environments</p>
 <p><strong>Tier:</strong><br/>Tier 1.5</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_1:30_PM_NAC_(600-1200_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>1:30 PM</td>
-<td class="clickable" onclick="showModal('modal-27')"><strong> NAC (600-1200 mg)</strong></td>
-<td> Individual</td>
-</tr>
 <div class="modal" id="modal-27">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-27')">×</span>
@@ -612,17 +330,9 @@
 <p><strong>Instructions:</strong><br/>Take on an empty stomach or at least 30 minutes before a meal; avoid taking close to protein intake</p>
 <p><strong>Benefits/Notes:</strong><br/>Boosts glutathione production, supports liver detoxification, respiratory health, and antioxidant defense</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Individual</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:00 PM</td>
-<td class="clickable" onclick="showModal('modal-28')"><strong>⚡ UC-II® Undenatured Type II Collagen (40 mg)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-28">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-28')">×</span>
@@ -630,17 +340,9 @@
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports collagen synthesis and connective tissue integrity (skin, joints, tendons)</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Apigenin_(optional)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-29')"><strong>🌙 Apigenin (optional)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-29">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-29')">×</span>
@@ -648,17 +350,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Berberine_(Standard,_500_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-30')"><strong> Berberine (Standard, 500 mg)</strong></td>
-<td> Evening Sleep &amp; Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-30">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-30')">×</span>
@@ -666,17 +360,9 @@
 <p><strong>Instructions:</strong><br/>Take with final meal or protein shake to support overnight glucose metabolism</p>
 <p><strong>Benefits/Notes:</strong><br/>Activates AMPK and improves overnight glucose and lipid metabolism; complements midday phytosome dose</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Evening Sleep &amp; Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Casein_Protein_(30-40g)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-31')"><strong>🌙 Casein Protein (30-40g)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-31">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-31')">×</span>
@@ -684,17 +370,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed with water or light snack</p>
 <p><strong>Benefits/Notes:</strong><br/>Sustained amino acid release for overnight muscle recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Fish_Oil_(PM_Dose)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-32')"><strong>🌙 Fish Oil (PM Dose)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-32">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-32')">×</span>
@@ -702,17 +380,9 @@
 <p><strong>Instructions:</strong><br/>Take with food or alongside evening supplements.</p>
 <p><strong>Benefits/Notes:</strong><br/>Second dose to increase EPA/DHA intake for cardiovascular, joint, and anti-inflammatory support. Splitting dose enhances absorption.</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Glycine_(3g)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-33')"><strong>🌙 Glycine (3g)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-33">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-33')">×</span>
@@ -720,17 +390,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed, may combine with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, lowers core body temperature, and supports collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Kyolic_Garlic" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-34')"><strong>🌙 Kyolic Garlic</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-34">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-34')">×</span>
@@ -738,17 +400,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; evening use is fine with a light snack or dinner</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports cardiovascular health, blood pressure regulation, and immune function</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_L-Theanine" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-35')"><strong>🌙 L-Theanine</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-35">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-35')">×</span>
@@ -756,17 +410,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Lithium_Orotate_(5_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-36')"><strong>🌙 Lithium Orotate (5 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-36">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-36')">×</span>
@@ -774,17 +420,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Magnesium_Glycinate" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-37')"><strong>🌙 Magnesium Glycinate</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-37">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-37')">×</span>
@@ -792,17 +430,9 @@
 <p><strong>Instructions:</strong><br/>Take in the evening or before bed; best with light snack</p>
 <p><strong>Benefits/Notes:</strong><br/>Promotes muscle relaxation, sleep quality, and supports cardiovascular health</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Melatonin_(0.3-1_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-38')"><strong>🌙 Melatonin (0.3-1 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-38">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-38')">×</span>
@@ -810,17 +440,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_08:30_PM_Nattokinase_(100-200_mg)" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-39')"><strong>🌙 Nattokinase (100-200 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-39">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-39')">×</span>
@@ -828,17 +450,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Cardio_09:30_PM_Bedtime" type="checkbox"/>
-</td>
-<td>Cardio</td>
-<td>09:30 PM</td>
-<td class="clickable" onclick="showModal('modal-40')"><strong>🌙 Bedtime</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-40">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-40')">×</span>
@@ -846,17 +460,9 @@
 <p><strong>Instructions:</strong><br/>Begin winding down for sleep</p>
 <p><strong>Benefits/Notes:</strong><br/>Ensures at least 7 hours of rest</p>
 <p><strong>Tier:</strong><br/>Unclassified</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_05:30_AM_Collagen" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-41')"><strong>⚡ Collagen</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-41">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-41')">×</span>
@@ -864,17 +470,9 @@
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports collagen synthesis and connective tissue integrity (skin, joints, tendons)</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_05:30_AM_Hydration" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-42')"><strong>⚡ Hydration</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-42">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-42')">×</span>
@@ -882,17 +480,9 @@
 <p><strong>Instructions:</strong><br/>1 glass water with electrolytes or sea salt + lemon before training</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports fluid balance, thermoregulation, and muscle function during fasted training</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_05:30_AM_Red_Light_Therapy_(Morning)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-43')"><strong>⚡ Red Light Therapy (Morning)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-43">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-43')">×</span>
@@ -900,17 +490,9 @@
 <p><strong>Instructions:</strong><br/>Use pre-resistance on resistance days or post-cardio on cardio days; 6-12 inches for 5-10 min</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances mitochondrial function and recovery; may support circadian rhythm</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_05:30_AM_Vitamin_C" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-44')"><strong>⚡ Vitamin C</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-44">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-44')">×</span>
@@ -918,17 +500,9 @@
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances collagen hydroxylation and antioxidant protection; supports immune function</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_05:45_AM_DHEA_(10-25_mg,_optional)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>05:45 AM</td>
-<td class="clickable" onclick="showModal('modal-45')"><strong>⚡ DHEA (10-25 mg, optional)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-45">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-45')">×</span>
@@ -936,71 +510,39 @@
 <p><strong>Instructions:</strong><br/>Take fasted; cycle 6-12 weeks on with lab monitoring</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports hormone balance, mood, and resilience in aging adults; monitor with labs</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_05:45_AM_Tongkat_Ali_(200-400_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>05:45 AM</td>
-<td class="clickable" onclick="showModal('modal-46')"><strong> Tongkat Ali (200-400 mg)</strong></td>
-<td> Fasted Pre-Cardio/Training Stack</td>
-</tr>
 <div class="modal" id="modal-46">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-46')">×</span>
-<h3> Tongkat Ali (200-400 mg)</h3>
+<h3>⚡ Tongkat Ali (200-400 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take fasted; cycle 8-12 weeks on, 2-4 weeks off</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports natural testosterone levels and stress resilience</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_05:45_AM_Transparent_Labs_Bulk" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>05:45 AM</td>
-<td class="clickable" onclick="showModal('modal-47')"><strong> Transparent Labs Bulk</strong></td>
-<td> Fasted Pre-Cardio/Training Stack</td>
-</tr>
 <div class="modal" id="modal-47">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-47')">×</span>
-<h3> Transparent Labs Bulk</h3>
+<h3>⚡ Transparent Labs Bulk</h3>
 <p><strong>Instructions:</strong><br/>Take fasted 15-30 min before training for focus and pump</p>
 <p><strong>Benefits/Notes:</strong><br/>Provides caffeine, betaine, and amino acids for performance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_06:00_AM_Fasted_Resistance_Training_(Mon/Wed/Fri/Sat)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>06:00 AM</td>
-<td class="clickable" onclick="showModal('modal-48')"><strong> Fasted Resistance Training (Mon/Wed/Fri/Sat)</strong></td>
-<td> Fasted Pre-Cardio/Training Stack</td>
-</tr>
 <div class="modal" id="modal-48">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-48')">×</span>
-<h3> Fasted Resistance Training (Mon/Wed/Fri/Sat)</h3>
+<h3>⚡ Fasted Resistance Training (Mon/Wed/Fri/Sat)</h3>
 <p><strong>Instructions:</strong><br/>Fasted</p>
 <p><strong>Benefits/Notes:</strong><br/>Strength &amp; hypertrophy; occurs on Mon/Wed/Fri/Sat</p>
 <p><strong>Tier:</strong><br/>–</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:00_AM_Creatine_(2.5_g)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:00 AM</td>
-<td class="clickable" onclick="showModal('modal-49')"><strong>💪 Creatine (2.5 g)</strong></td>
-<td>💪 Post-Workout Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-49">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-49')">×</span>
@@ -1008,17 +550,9 @@
 <p><strong>Instructions:</strong><br/>Take 2.5 g fasted, repeat post-workout if split dosing</p>
 <p><strong>Benefits/Notes:</strong><br/>Increases ATP regeneration and performance in high-intensity training; supports muscle and strength gains</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Post-Workout Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:00_AM_Protein_Shake_(20-40g)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:00 AM</td>
-<td class="clickable" onclick="showModal('modal-50')"><strong>💪 Protein Shake (20-40g)</strong></td>
-<td>💪 Post-Workout Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-50">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-50')">×</span>
@@ -1026,17 +560,9 @@
 <p><strong>Instructions:</strong><br/>Post-workout recovery</p>
 <p><strong>Benefits/Notes:</strong><br/>Rapidly delivers amino acids post-workout to stimulate muscle protein synthesis and recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Post-Workout Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Amlodipine_(5-10_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-51')"><strong> Amlodipine (5-10 mg)</strong></td>
-<td> Medication</td>
-</tr>
 <div class="modal" id="modal-51">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-51')">×</span>
@@ -1044,17 +570,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Lowers blood pressure via calcium channel blockade; no known direct hormonal impact</p>
 <p><strong>Tier:</strong><br/>Medication</p>
+<p><strong>Stack:</strong><br/>Medication</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Animal_Pak_(1_pack)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-52')"><strong>⏳ Animal Pak (1 pack)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-52">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-52')">×</span>
@@ -1062,17 +580,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Comprehensive multivitamin/mineral support for energy production, immune function, and training recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Ashwagandha_(600_mg_KSM-66)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-53')"><strong>⏳ Ashwagandha (600 mg KSM-66)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-53">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-53')">×</span>
@@ -1080,17 +590,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Astaxanthin" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-54')"><strong>⏳ Astaxanthin</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-54">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-54')">×</span>
@@ -1098,17 +600,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Potent antioxidant supporting skin, eye, cardiovascular, and brain health</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Boron_(3-6_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-55')"><strong>⏳ Boron (3-6 mg)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-55">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-55')">×</span>
@@ -1116,17 +610,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_CoQ10_(Ubiquinol)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-56')"><strong>⏳ CoQ10 (Ubiquinol)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-56">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-56')">×</span>
@@ -1134,17 +620,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances mitochondrial function and cardiovascular energy metabolism</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Fat-Soluble_Supplements" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-57')"><strong>⏳ Fat-Soluble Supplements</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-57">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-57')">×</span>
@@ -1152,17 +630,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Placeholder row; consider removing or listing specific fat-soluble supplements (e.g., D3, K2, A, E)</p>
 <p><strong>Tier:</strong><br/>Remove or Replace</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Fish/Krill_Oil" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-58')"><strong>⏳ Fish/Krill Oil</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-58">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-58')">×</span>
@@ -1170,17 +640,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-59')"><strong>⏳ TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-59">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-59')">×</span>
@@ -1188,17 +650,9 @@
 <p><strong>Instructions:</strong><br/>Take with food as part of Breakfast Longevity Stack</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports prostate health and urinary function; rich in antioxidant phytonutrients</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Vitamin_D3" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-60')"><strong>⏳ Vitamin D3</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-60">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-60')">×</span>
@@ -1206,17 +660,9 @@
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-61')"><strong>⏳ Vitamin K2 (MK-4 + MK-7)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
 <div class="modal" id="modal-61">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-61')">×</span>
@@ -1224,17 +670,9 @@
 <p><strong>Instructions:</strong><br/>Take with a fat-containing meal (e.g., breakfast) for optimal absorption</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports calcium metabolism and bone/arterial health; MK-4 provides acute action, MK-7 long-lasting effects</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:15_AM_Lion's_Mane_Mushroom_(500-1000_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:15 AM</td>
-<td class="clickable" onclick="showModal('modal-62')"><strong> Lion's Mane Mushroom (500-1000 mg)</strong></td>
-<td> Optional Nootropic Stack</td>
-</tr>
 <div class="modal" id="modal-62">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-62')">×</span>
@@ -1242,17 +680,9 @@
 <p><strong>Instructions:</strong><br/>Take with or without food, ideally in the AM or with nootropic stack</p>
 <p><strong>Benefits/Notes:</strong><br/>Promotes neurogenesis, cognitive clarity, memory, and brain resilience</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Optional Nootropic Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-63')"><strong> Berberine Phytosome (Feel Good Superfoods)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-63">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-63')">×</span>
@@ -1260,17 +690,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; post-lunch for glucose control and AMPK activation</p>
 <p><strong>Benefits/Notes:</strong><br/>Activates AMPK, supports insulin sensitivity, glucose metabolism, and healthy aging</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-64')"><strong> BroccoMax (Sulforaphane Precursor)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-64">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-64')">×</span>
@@ -1278,17 +700,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Provides sulforaphane to activate NRF2 pathway; supports detoxification and cellular protection</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_12:35_PM_Lutein_(10-20_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-65')"><strong> Lutein (10-20 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-65">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-65')">×</span>
@@ -1296,17 +710,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Protects against blue light and oxidative stress in the retina; ideal for high screen time</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-66')"><strong> Niacinamide (Vitamin B3, 250-500 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-66">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-66')">×</span>
@@ -1314,17 +720,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports NAD+ regeneration and mitochondrial health; beneficial for metabolism and skin</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_12:35_PM_Zeaxanthin_(6-10_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-67')"><strong> Zeaxanthin (6-10 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
 <div class="modal" id="modal-67">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-67')">×</span>
@@ -1332,17 +730,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Synergistic with lutein to protect macula and enhance visual performance in screen-intensive environments</p>
 <p><strong>Tier:</strong><br/>Tier 1.5</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_1:30_PM_NAC_(600-1200_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>1:30 PM</td>
-<td class="clickable" onclick="showModal('modal-68')"><strong> NAC (600-1200 mg)</strong></td>
-<td> Individual</td>
-</tr>
 <div class="modal" id="modal-68">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-68')">×</span>
@@ -1350,17 +740,9 @@
 <p><strong>Instructions:</strong><br/>Take on an empty stomach or at least 30 minutes before a meal; avoid taking close to protein intake</p>
 <p><strong>Benefits/Notes:</strong><br/>Boosts glutathione production, supports liver detoxification, respiratory health, and antioxidant defense</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Individual</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:00 PM</td>
-<td class="clickable" onclick="showModal('modal-69')"><strong>⚡ UC-II® Undenatured Type II Collagen (40 mg)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
 <div class="modal" id="modal-69">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-69')">×</span>
@@ -1368,17 +750,9 @@
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports collagen synthesis and connective tissue integrity (skin, joints, tendons)</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Apigenin_(optional)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-70')"><strong>🌙 Apigenin (optional)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-70">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-70')">×</span>
@@ -1386,17 +760,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Berberine_(Standard,_500_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-71')"><strong> Berberine (Standard, 500 mg)</strong></td>
-<td> Evening Sleep &amp; Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-71">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-71')">×</span>
@@ -1404,17 +770,9 @@
 <p><strong>Instructions:</strong><br/>Take with final meal or protein shake to support overnight glucose metabolism</p>
 <p><strong>Benefits/Notes:</strong><br/>Activates AMPK and improves overnight glucose and lipid metabolism; complements midday phytosome dose</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Evening Sleep &amp; Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Casein_Protein_(30-40g)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-72')"><strong>🌙 Casein Protein (30-40g)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-72">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-72')">×</span>
@@ -1422,17 +780,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed with water or light snack</p>
 <p><strong>Benefits/Notes:</strong><br/>Sustained amino acid release for overnight muscle recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Fish_Oil_(PM_Dose)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-73')"><strong>🌙 Fish Oil (PM Dose)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-73">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-73')">×</span>
@@ -1440,17 +790,9 @@
 <p><strong>Instructions:</strong><br/>Take with food or alongside evening supplements.</p>
 <p><strong>Benefits/Notes:</strong><br/>Second dose to increase EPA/DHA intake for cardiovascular, joint, and anti-inflammatory support. Splitting dose enhances absorption.</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Glycine_(3g)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-74')"><strong>🌙 Glycine (3g)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-74">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-74')">×</span>
@@ -1458,17 +800,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed, may combine with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, lowers core body temperature, and supports collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Kyolic_Garlic" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-75')"><strong>🌙 Kyolic Garlic</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-75">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-75')">×</span>
@@ -1476,17 +810,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; evening use is fine with a light snack or dinner</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports cardiovascular health, blood pressure regulation, and immune function</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_L-Theanine" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-76')"><strong>🌙 L-Theanine</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-76">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-76')">×</span>
@@ -1494,17 +820,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Lithium_Orotate_(5_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-77')"><strong>🌙 Lithium Orotate (5 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-77">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-77')">×</span>
@@ -1512,17 +830,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Magnesium_Glycinate" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-78')"><strong>🌙 Magnesium Glycinate</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-78">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-78')">×</span>
@@ -1530,17 +840,9 @@
 <p><strong>Instructions:</strong><br/>Take in the evening or before bed; best with light snack</p>
 <p><strong>Benefits/Notes:</strong><br/>Promotes muscle relaxation, sleep quality, and supports cardiovascular health</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Melatonin_(0.3-1_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-79')"><strong>🌙 Melatonin (0.3-1 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-79">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-79')">×</span>
@@ -1548,17 +850,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_08:30_PM_Nattokinase_(100-200_mg)" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-80')"><strong>🌙 Nattokinase (100-200 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-80">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-80')">×</span>
@@ -1566,17 +860,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Resistance_09:30_PM_Bedtime" type="checkbox"/>
-</td>
-<td>Resistance</td>
-<td>09:30 PM</td>
-<td class="clickable" onclick="showModal('modal-81')"><strong>🌙 Bedtime</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-81">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-81')">×</span>
@@ -1584,521 +870,289 @@
 <p><strong>Instructions:</strong><br/>Begin winding down for sleep</p>
 <p><strong>Benefits/Notes:</strong><br/>Ensures at least 7 hours of rest</p>
 <p><strong>Tier:</strong><br/>Unclassified</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(Rest)_08:30_PM_Fish_Oil_(PM_Dose)" type="checkbox"/>
-</td>
-<td>Sunday (Rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-82')"><strong>🌙 Fish Oil (PM Dose)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-82">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-82')">×</span>
-<h3>🌙 Fish Oil (PM Dose)</h3>
-<p><strong>Instructions:</strong><br/>Take with food or alongside evening supplements.</p>
-<p><strong>Benefits/Notes:</strong><br/>Second dose to increase EPA/DHA intake for cardiovascular, joint, and anti-inflammatory support. Splitting dose enhances absorption.</p>
-<p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
-</div>
-</div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_05:30_AM_Collagen" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-83')"><strong>⚡ Collagen</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
-<div class="modal" id="modal-83">
-<div class="modal-content">
-<span class="close" onclick="closeModal('modal-83')">×</span>
 <h3>⚡ Collagen</h3>
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports collagen synthesis and connective tissue integrity (skin, joints, tendons)</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_05:30_AM_Vitamin_C" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>05:30 AM</td>
-<td class="clickable" onclick="showModal('modal-84')"><strong>⚡ Vitamin C</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
-<div class="modal" id="modal-84">
+<div class="modal" id="modal-83">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-84')">×</span>
+<span class="close" onclick="closeModal('modal-83')">×</span>
 <h3>⚡ Vitamin C</h3>
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances collagen hydroxylation and antioxidant protection; supports immune function</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:00_AM_Creatine_(2.5_g)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:00 AM</td>
-<td class="clickable" onclick="showModal('modal-85')"><strong>💪 Creatine (2.5 g)</strong></td>
-<td>💪 Post-Workout Recovery Stack</td>
-</tr>
-<div class="modal" id="modal-85">
+<div class="modal" id="modal-84">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-85')">×</span>
+<span class="close" onclick="closeModal('modal-84')">×</span>
 <h3>💪 Creatine (2.5 g)</h3>
 <p><strong>Instructions:</strong><br/>Take 2.5 g fasted, repeat post-workout if split dosing</p>
 <p><strong>Benefits/Notes:</strong><br/>Increases ATP regeneration and performance in high-intensity training; supports muscle and strength gains</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Post-Workout Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:00_AM_Protein_Shake_(20-40g)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:00 AM</td>
-<td class="clickable" onclick="showModal('modal-86')"><strong>💪 Protein Shake (20-40g)</strong></td>
-<td>💪 Post-Workout Recovery Stack</td>
-</tr>
-<div class="modal" id="modal-86">
+<div class="modal" id="modal-85">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-86')">×</span>
+<span class="close" onclick="closeModal('modal-85')">×</span>
 <h3>💪 Protein Shake (20-40g)</h3>
 <p><strong>Instructions:</strong><br/>Post-workout recovery</p>
 <p><strong>Benefits/Notes:</strong><br/>Rapidly delivers amino acids post-workout to stimulate muscle protein synthesis and recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Post-Workout Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:00_AM_Red_Light_Therapy_(Morning)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:00 AM</td>
-<td class="clickable" onclick="showModal('modal-87')"><strong>⚡ Red Light Therapy (Morning)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
-<div class="modal" id="modal-87">
+<div class="modal" id="modal-86">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-87')">×</span>
+<span class="close" onclick="closeModal('modal-86')">×</span>
 <h3>⚡ Red Light Therapy (Morning)</h3>
 <p><strong>Instructions:</strong><br/>Use pre-resistance on resistance days or post-cardio on cardio days; 6-12 inches for 5-10 min</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances mitochondrial function and recovery; may support circadian rhythm</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Amlodipine_(5-10_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-88')"><strong> Amlodipine (5-10 mg)</strong></td>
-<td> Medication</td>
-</tr>
-<div class="modal" id="modal-88">
+<div class="modal" id="modal-87">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-88')">×</span>
+<span class="close" onclick="closeModal('modal-87')">×</span>
 <h3> Amlodipine (5-10 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Lowers blood pressure via calcium channel blockade; no known direct hormonal impact</p>
 <p><strong>Tier:</strong><br/>Medication</p>
+<p><strong>Stack:</strong><br/>Medication</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Animal_Pak_(1_pack)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-89')"><strong>⏳ Animal Pak (1 pack)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-89">
+<div class="modal" id="modal-88">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-89')">×</span>
+<span class="close" onclick="closeModal('modal-88')">×</span>
 <h3>⏳ Animal Pak (1 pack)</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Comprehensive multivitamin/mineral support for energy production, immune function, and training recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Ashwagandha_(600_mg_KSM-66)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-90')"><strong>⏳ Ashwagandha (600 mg KSM-66)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-90">
+<div class="modal" id="modal-89">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-90')">×</span>
+<span class="close" onclick="closeModal('modal-89')">×</span>
 <h3>⏳ Ashwagandha (600 mg KSM-66)</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Astaxanthin" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-91')"><strong>⏳ Astaxanthin</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-91">
+<div class="modal" id="modal-90">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-91')">×</span>
+<span class="close" onclick="closeModal('modal-90')">×</span>
 <h3>⏳ Astaxanthin</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Potent antioxidant supporting skin, eye, cardiovascular, and brain health</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Boron_(3-6_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-92')"><strong>⏳ Boron (3-6 mg)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-92">
+<div class="modal" id="modal-91">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-92')">×</span>
+<span class="close" onclick="closeModal('modal-91')">×</span>
 <h3>⏳ Boron (3-6 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_CoQ10_(Ubiquinol)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-93')"><strong>⏳ CoQ10 (Ubiquinol)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-93">
+<div class="modal" id="modal-92">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-93')">×</span>
+<span class="close" onclick="closeModal('modal-92')">×</span>
 <h3>⏳ CoQ10 (Ubiquinol)</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Enhances mitochondrial function and cardiovascular energy metabolism</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Fat-Soluble_Supplements" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-94')"><strong>⏳ Fat-Soluble Supplements</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-94">
+<div class="modal" id="modal-93">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-94')">×</span>
+<span class="close" onclick="closeModal('modal-93')">×</span>
 <h3>⏳ Fat-Soluble Supplements</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Placeholder row; consider removing or listing specific fat-soluble supplements (e.g., D3, K2, A, E)</p>
 <p><strong>Tier:</strong><br/>Remove or Replace</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Fish/Krill_Oil" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-95')"><strong>⏳ Fish/Krill Oil</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-95">
+<div class="modal" id="modal-94">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-95')">×</span>
+<span class="close" onclick="closeModal('modal-94')">×</span>
 <h3>⏳ Fish/Krill Oil</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_TruNature_Prostate_Plus_Health_Complex_(Saw_Palmetto,_Zinc,_Lycopene,_Pumpkin_Seed,_Cran‑Max®)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-96')"><strong>⏳ TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-96">
+<div class="modal" id="modal-95">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-96')">×</span>
+<span class="close" onclick="closeModal('modal-95')">×</span>
 <h3>⏳ TruNature Prostate Plus Health Complex (Saw Palmetto, Zinc, Lycopene, Pumpkin Seed, Cran‑Max®)</h3>
 <p><strong>Instructions:</strong><br/>Take with food as part of Breakfast Longevity Stack</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports prostate health and urinary function; rich in antioxidant phytonutrients</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Vitamin_D3" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-97')"><strong>⏳ Vitamin D3</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-97">
+<div class="modal" id="modal-96">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-97')">×</span>
+<span class="close" onclick="closeModal('modal-96')">×</span>
 <h3>⏳ Vitamin D3</h3>
 <p><strong>Instructions:</strong><br/>Take with food to improve absorption; can be taken AM or PM</p>
 <p><strong>Benefits/Notes:</strong><br/>Reduces stress, supports recovery, improves sleep and testosterone balance</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_07:30_AM_Vitamin_K2_(MK-4_+_MK-7)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>07:30 AM</td>
-<td class="clickable" onclick="showModal('modal-98')"><strong>⏳ Vitamin K2 (MK-4 + MK-7)</strong></td>
-<td>⏳ Breakfast Longevity Stack</td>
-</tr>
-<div class="modal" id="modal-98">
+<div class="modal" id="modal-97">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-98')">×</span>
+<span class="close" onclick="closeModal('modal-97')">×</span>
 <h3>⏳ Vitamin K2 (MK-4 + MK-7)</h3>
 <p><strong>Instructions:</strong><br/>Take with a fat-containing meal (e.g., breakfast) for optimal absorption</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports calcium metabolism and bone/arterial health; MK-4 provides acute action, MK-7 long-lasting effects</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Breakfast Longevity Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:15_AM_Lion's_Mane_Mushroom_(500-1000_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:15 AM</td>
-<td class="clickable" onclick="showModal('modal-99')"><strong> Lion's Mane Mushroom (500-1000 mg)</strong></td>
-<td> Optional Nootropic Stack</td>
-</tr>
-<div class="modal" id="modal-99">
+<div class="modal" id="modal-98">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-99')">×</span>
+<span class="close" onclick="closeModal('modal-98')">×</span>
 <h3> Lion's Mane Mushroom (500-1000 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take with or without food, ideally in the AM or with nootropic stack</p>
 <p><strong>Benefits/Notes:</strong><br/>Promotes neurogenesis, cognitive clarity, memory, and brain resilience</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Optional Nootropic Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_12:35_PM_Berberine_Phytosome_(Feel_Good_Superfoods)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-100')"><strong> Berberine Phytosome (Feel Good Superfoods)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
-<div class="modal" id="modal-100">
+<div class="modal" id="modal-99">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-100')">×</span>
+<span class="close" onclick="closeModal('modal-99')">×</span>
 <h3> Berberine Phytosome (Feel Good Superfoods)</h3>
 <p><strong>Instructions:</strong><br/>Take with food; post-lunch for glucose control and AMPK activation</p>
 <p><strong>Benefits/Notes:</strong><br/>Activates AMPK, supports insulin sensitivity, glucose metabolism, and healthy aging</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_12:35_PM_BroccoMax_(Sulforaphane_Precursor)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-101')"><strong> BroccoMax (Sulforaphane Precursor)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
-<div class="modal" id="modal-101">
+<div class="modal" id="modal-100">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-101')">×</span>
+<span class="close" onclick="closeModal('modal-100')">×</span>
 <h3> BroccoMax (Sulforaphane Precursor)</h3>
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Provides sulforaphane to activate NRF2 pathway; supports detoxification and cellular protection</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_12:35_PM_Lutein_(10-20_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-102')"><strong> Lutein (10-20 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
-<div class="modal" id="modal-102">
+<div class="modal" id="modal-101">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-102')">×</span>
+<span class="close" onclick="closeModal('modal-101')">×</span>
 <h3> Lutein (10-20 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Protects against blue light and oxidative stress in the retina; ideal for high screen time</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_12:35_PM_Niacinamide_(Vitamin_B3,_250-500_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-103')"><strong> Niacinamide (Vitamin B3, 250-500 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
-<div class="modal" id="modal-103">
+<div class="modal" id="modal-102">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-103')">×</span>
+<span class="close" onclick="closeModal('modal-102')">×</span>
 <h3> Niacinamide (Vitamin B3, 250-500 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports NAD+ regeneration and mitochondrial health; beneficial for metabolism and skin</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_12:35_PM_Zeaxanthin_(6-10_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>12:35 PM</td>
-<td class="clickable" onclick="showModal('modal-104')"><strong> Zeaxanthin (6-10 mg)</strong></td>
-<td> Midday Longevity &amp; Detox Stack</td>
-</tr>
-<div class="modal" id="modal-104">
+<div class="modal" id="modal-103">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-104')">×</span>
+<span class="close" onclick="closeModal('modal-103')">×</span>
 <h3> Zeaxanthin (6-10 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take with food; stack in midday longevity block</p>
 <p><strong>Benefits/Notes:</strong><br/>Synergistic with lutein to protect macula and enhance visual performance in screen-intensive environments</p>
 <p><strong>Tier:</strong><br/>Tier 1.5</p>
+<p><strong>Stack:</strong><br/>Midday Longevity &amp; Detox Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_1:30_PM_NAC_(600-1200_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>1:30 PM</td>
-<td class="clickable" onclick="showModal('modal-105')"><strong> NAC (600-1200 mg)</strong></td>
-<td> Individual</td>
-</tr>
-<div class="modal" id="modal-105">
+<div class="modal" id="modal-104">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-105')">×</span>
+<span class="close" onclick="closeModal('modal-104')">×</span>
 <h3> NAC (600-1200 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take on an empty stomach or at least 30 minutes before a meal; avoid taking close to protein intake</p>
 <p><strong>Benefits/Notes:</strong><br/>Boosts glutathione production, supports liver detoxification, respiratory health, and antioxidant defense</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Individual</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:00_PM_UC-II®_Undenatured_Type_II_Collagen_(40_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:00 PM</td>
-<td class="clickable" onclick="showModal('modal-106')"><strong>⚡ UC-II® Undenatured Type II Collagen (40 mg)</strong></td>
-<td>⚡ Fasted Pre-Workout Stack</td>
-</tr>
-<div class="modal" id="modal-106">
+<div class="modal" id="modal-105">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-106')">×</span>
+<span class="close" onclick="closeModal('modal-105')">×</span>
 <h3>⚡ UC-II® Undenatured Type II Collagen (40 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take 30-45 minutes before resistance training or with a light drink</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports collagen synthesis and connective tissue integrity (skin, joints, tendons)</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Fasted Pre-Workout Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Apigenin_(optional)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-107')"><strong>🌙 Apigenin (optional)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
-<div class="modal" id="modal-107">
+<div class="modal" id="modal-106">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-107')">×</span>
+<span class="close" onclick="closeModal('modal-106')">×</span>
 <h3>🌙 Apigenin (optional)</h3>
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Berberine_(Standard,_500_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-108')"><strong> Berberine (Standard, 500 mg)</strong></td>
-<td> Evening Sleep &amp; Recovery Stack</td>
-</tr>
-<div class="modal" id="modal-108">
+<div class="modal" id="modal-107">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-108')">×</span>
+<span class="close" onclick="closeModal('modal-107')">×</span>
 <h3> Berberine (Standard, 500 mg)</h3>
 <p><strong>Instructions:</strong><br/>Take with final meal or protein shake to support overnight glucose metabolism</p>
 <p><strong>Benefits/Notes:</strong><br/>Activates AMPK and improves overnight glucose and lipid metabolism; complements midday phytosome dose</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Evening Sleep &amp; Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Casein_Protein_(30-40g)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-109')"><strong>🌙 Casein Protein (30-40g)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
-<div class="modal" id="modal-109">
+<div class="modal" id="modal-108">
 <div class="modal-content">
-<span class="close" onclick="closeModal('modal-109')">×</span>
+<span class="close" onclick="closeModal('modal-108')">×</span>
 <h3>🌙 Casein Protein (30-40g)</h3>
 <p><strong>Instructions:</strong><br/>Take before bed with water or light snack</p>
 <p><strong>Benefits/Notes:</strong><br/>Sustained amino acid release for overnight muscle recovery</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Glycine_(3g)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-110')"><strong>🌙 Glycine (3g)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
+<div class="modal" id="modal-109">
+<div class="modal-content">
+<span class="close" onclick="closeModal('modal-109')">×</span>
+<h3>🌙 Fish Oil (PM Dose)</h3>
+<p><strong>Instructions:</strong><br/>Take with food or alongside evening supplements.</p>
+<p><strong>Benefits/Notes:</strong><br/>Second dose to increase EPA/DHA intake for cardiovascular, joint, and anti-inflammatory support. Splitting dose enhances absorption.</p>
+<p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
+</div>
+</div>
 <div class="modal" id="modal-110">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-110')">×</span>
@@ -2106,17 +1160,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed, may combine with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, lowers core body temperature, and supports collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Kyolic_Garlic" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-111')"><strong>🌙 Kyolic Garlic</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-111">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-111')">×</span>
@@ -2124,17 +1170,9 @@
 <p><strong>Instructions:</strong><br/>Take with food; evening use is fine with a light snack or dinner</p>
 <p><strong>Benefits/Notes:</strong><br/>Supports cardiovascular health, blood pressure regulation, and immune function</p>
 <p><strong>Tier:</strong><br/>Tier 2 (Optional)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_L-Theanine" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-112')"><strong>🌙 L-Theanine</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-112">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-112')">×</span>
@@ -2142,17 +1180,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Lithium_Orotate_(5_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-113')"><strong>🌙 Lithium Orotate (5 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-113">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-113')">×</span>
@@ -2160,17 +1190,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Magnesium_Glycinate" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-114')"><strong>🌙 Magnesium Glycinate</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-114">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-114')">×</span>
@@ -2178,17 +1200,9 @@
 <p><strong>Instructions:</strong><br/>Take in the evening or before bed; best with light snack</p>
 <p><strong>Benefits/Notes:</strong><br/>Promotes muscle relaxation, sleep quality, and supports cardiovascular health</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Melatonin_(0.3-1_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-115')"><strong>🌙 Melatonin (0.3-1 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-115">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-115')">×</span>
@@ -2196,17 +1210,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_08:30_PM_Nattokinase_(100-200_mg)" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>08:30 PM</td>
-<td class="clickable" onclick="showModal('modal-116')"><strong>🌙 Nattokinase (100-200 mg)</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-116">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-116')">×</span>
@@ -2214,17 +1220,9 @@
 <p><strong>Instructions:</strong><br/>Take before bed; may be taken with magnesium or casein</p>
 <p><strong>Benefits/Notes:</strong><br/>Improves sleep, body temperature regulation, and collagen synthesis</p>
 <p><strong>Tier:</strong><br/>Tier 1 (Keep)</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-<tr>
-<td class="checkbox-col">
-<input class="completion" data-id="Sunday_(rest)_09:30_PM_Bedtime" type="checkbox"/>
-</td>
-<td>Sunday (rest)</td>
-<td>09:30 PM</td>
-<td class="clickable" onclick="showModal('modal-117')"><strong>🌙 Bedtime</strong></td>
-<td>🌙 Sleep + Recovery Stack</td>
-</tr>
 <div class="modal" id="modal-117">
 <div class="modal-content">
 <span class="close" onclick="closeModal('modal-117')">×</span>
@@ -2232,68 +1230,296 @@
 <p><strong>Instructions:</strong><br/>Begin winding down for sleep</p>
 <p><strong>Benefits/Notes:</strong><br/>Ensures at least 7 hours of rest</p>
 <p><strong>Tier:</strong><br/>Unclassified</p>
+<p><strong>Stack:</strong><br/>Sleep + Recovery Stack</p>
 </div>
 </div>
-</tbody>
-</table>
 <script>
-    function toggleDarkMode() {
-        document.body.classList.toggle("dark-mode");
-        const mode = document.body.classList.contains("dark-mode") ? "dark" : "light";
-        localStorage.setItem("theme", mode);
-        document.getElementById("modeStatus").textContent = "Dark Mode: " + (mode === "dark" ? "ON" : "OFF");
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  const mode = document.body.classList.contains("dark-mode") ? "dark" : "light";
+  localStorage.setItem("theme", mode);
+  document.getElementById("modeStatus").textContent = "Dark Mode: " + (mode === "dark" ? "ON" : "OFF");
+}
+function clearAllChecks() {
+  document.querySelectorAll('.completion').forEach(cb => {
+    cb.checked = false;
+    localStorage.removeItem(cb.dataset.id);
+  });
+}
+function loadTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
+    document.getElementById("modeStatus").textContent = "Dark Mode: ON";
+  } else {
+    document.getElementById("modeStatus").textContent = "Dark Mode: OFF";
+  }
+}
+function showModal(id) {
+  document.getElementById(id).style.display = "block";
+}
+function closeModal(id) {
+  document.getElementById(id).style.display = "none";
+}
+window.onclick = function(event) {
+  if (event.target.classList.contains('modal')) {
+    event.target.style.display = "none";
+  }
+}
+document.addEventListener("DOMContentLoaded", function () {
+  const table = $('#scheduleTable').DataTable({ pageLength: 50 });
+  $('#scheduleFilter').on('change', function () {
+    table.column(1).search(this.value).draw();
+  });
+  $('#timeFilter').on('change', function () {
+    table.column(2).search(this.value).draw();
+  });
+  document.querySelectorAll('.completion').forEach(cb => {
+    const id = cb.dataset.id;
+    const saved = localStorage.getItem(id);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        cb.checked = data.completed;
+      } catch (e) { cb.checked = saved === 'true'; }
     }
-
-    function clearAllChecks() {
-        document.querySelectorAll('.completion').forEach(cb => {
-            cb.checked = false;
-            localStorage.removeItem(cb.dataset.id);
-        });
-    }
-
-    function loadTheme() {
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme === "dark") {
-            document.body.classList.add("dark-mode");
-            document.getElementById("modeStatus").textContent = "Dark Mode: ON";
-        } else {
-            document.getElementById("modeStatus").textContent = "Dark Mode: OFF";
-        }
-    }
-
-    function showModal(id) {
-        document.getElementById(id).style.display = "block";
-    }
-
-    function closeModal(id) {
-        document.getElementById(id).style.display = "none";
-    }
-
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = "none";
-        }
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const table = $('#scheduleTable').DataTable({ pageLength: 50 });
-
-        $('#scheduleFilter').on('change', function () {
-            table.column(1).search(this.value).draw();
-        });
-
-        $('#timeFilter').on('change', function () {
-            table.column(2).search(this.value).draw();
-        });
-
-        document.querySelectorAll('.completion').forEach(cb => {
-            const id = cb.dataset.id;
-            cb.checked = localStorage.getItem(id) === 'true';
-            cb.addEventListener('change', () => {
-                localStorage.setItem(id, cb.checked);
-            });
-        });
+    cb.addEventListener('change', () => {
+      const completed = cb.checked;
+      const timestamp = new Date().toISOString();
+      const data = JSON.stringify({ completed, timestamp });
+      localStorage.setItem(id, data);
     });
+  });
+});
 </script>
-</body>
-</html>
+<div class="modal" id="completedLogModal">
+<div class="modal-content" style="max-width: 800px;">
+<span class="close" onclick="closeCompletedLog()">×</span>
+<h3>Completed Supplement Log</h3>
+<div id="completedLogContent"><p>Loading log...</p></div>
+<button onclick="downloadCSV()">Download CSV</button>
+</div>
+</div>
+<script>
+function formatDate(date) {
+  const d = new Date(date);
+  return d.toLocaleString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true, month: '2-digit', day: '2-digit', year: 'numeric' });
+}
+function showCompletedLog() {
+  const modal = document.getElementById("completedLogModal");
+  const content = document.getElementById("completedLogContent");
+  content.innerHTML = "";
+  const rows = [["Timestamp", "Training Day", "Time", "Supplement"]];
+  document.querySelectorAll("#scheduleTable tbody tr").forEach(row => {
+    const cb = row.querySelector(".completion");
+    if (!cb) return;
+    const id = cb.dataset.id;
+    const saved = localStorage.getItem(id);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.completed) {
+          
+          const parts = id.split("_");
+          const day = parts[0];
+          const time = parts[1] + " " + parts[2];
+          const name = parts.slice(3).join(" ").replace(/_/g, " ");
+
+          rows.push([formatDate(data.timestamp), day, time.replace(/_/g, " "), name.replace(/_/g, " ")]);
+        }
+      } catch {}
+    }
+  });
+
+  if (rows.length === 1) {
+    content.innerHTML = "<p>No tasks have been completed yet.</p>";
+  } else {
+    let html = "<table style='width:100%;border-collapse: collapse'><tr>" +
+               rows[0].map(h => `<th style='text-align:left;border-bottom:1px solid #ccc;padding:6px;'>${h}</th>`).join("") +
+               "</tr>";
+    for (let i = 1; i < rows.length; i++) {
+      html += "<tr>" + rows[i].map(c => `<td style='padding:6px;border-bottom:1px solid #eee;'>${c}</td>`).join("") + "</tr>";
+    }
+    html += "</table>";
+    content.innerHTML = html;
+  }
+  modal.style.display = "block";
+}
+function closeCompletedLog() {
+  document.getElementById("completedLogModal").style.display = "none";
+}
+function downloadCSV() {
+  const rows = [["Timestamp", "Training Day", "Time", "Supplement"]];
+  document.querySelectorAll("#scheduleTable tbody tr").forEach(row => {
+    const cb = row.querySelector(".completion");
+    if (!cb) return;
+    const id = cb.dataset.id;
+    const saved = localStorage.getItem(id);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.completed) {
+          
+          const parts = id.split("_");
+          const day = parts[0];
+          const time = parts[1] + " " + parts[2];
+          const name = parts.slice(3).join(" ").replace(/_/g, " ");
+
+          rows.push([formatDate(data.timestamp), day, time.replace(/_/g, " "), name.replace(/_/g, " ")]);
+        }
+      } catch {}
+    }
+  });
+
+  let csvContent = rows.map(r => r.map(f => `"${f}"`).join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "completed_log.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>
+<script>
+function formatDate(date) {
+  const d = new Date(date);
+  return d.toLocaleString("en-US", {
+    hour: 'numeric', minute: '2-digit', hour12: true,
+    month: '2-digit', day: '2-digit', year: 'numeric'
+  });
+}
+function formatDuration(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+  const ms = e - s;
+  const mins = Math.floor(ms / 60000);
+  return mins + " min" + (mins !== 1 ? "s" : "");
+}
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('.timer-btn').forEach(btn => {
+    const id = btn.dataset.id;
+    const storage = localStorage.getItem(id);
+    if (storage) {
+      try {
+        const data = JSON.parse(storage);
+        if (data.start && !data.end) {
+          btn.textContent = "Stop";
+        }
+      } catch {}
+    }
+    btn.addEventListener('click', () => {
+      let data = {};
+      try {
+        const raw = localStorage.getItem(id);
+        if (raw) data = JSON.parse(raw);
+      } catch {}
+      if (!data.start || data.end) {
+        data.start = new Date().toISOString();
+        delete data.end;
+        btn.textContent = "Stop";
+      } else {
+        data.end = new Date().toISOString();
+        data.duration = formatDuration(data.start, data.end);
+        btn.textContent = "Start";
+      const checkbox = document.querySelector(`.completion[data-id="${id}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+        const completed = true;
+        const timestamp = new Date().toISOString();
+        localStorage.setItem(id, JSON.stringify({ ...data, completed, timestamp }));
+      }
+    
+      }
+      localStorage.setItem(id, JSON.stringify(data));
+    });
+  });
+});
+function showCompletedLog() {
+  const modal = document.getElementById("completedLogModal");
+  const content = document.getElementById("completedLogContent");
+  content.innerHTML = "";
+  const rows = [["Start", "End", "Duration", "Training Day", "Time", "Supplement"]];
+  document.querySelectorAll("#scheduleTable tbody tr").forEach(row => {
+    const cb = row.querySelector(".completion");
+    const timer = row.querySelector(".timer-btn");
+    if (!cb || !timer) return;
+    const id = cb.dataset.id;
+    const saved = localStorage.getItem(id);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.start && data.end) {
+          
+          const parts = id.split("_");
+          const day = parts[0];
+          const time = parts[1] + " " + parts[2];
+          const name = parts.slice(3).join(" ").replace(/_/g, " ");
+
+          rows.push([
+            formatDate(data.start),
+            formatDate(data.end),
+            data.duration || formatDuration(data.start, data.end),
+            day,
+            time.replace(/_/g, " "),
+            name.replace(/_/g, " ")
+          ]);
+        }
+      } catch {}
+    }
+  });
+  if (rows.length === 1) {
+    content.innerHTML = "<p>No timing records found yet.</p>";
+  } else {
+    let html = "<table style='width:100%;border-collapse: collapse'><tr>" +
+               rows[0].map(h => `<th style='text-align:left;border-bottom:1px solid #ccc;padding:6px;'>${h}</th>`).join("") +
+               "</tr>";
+    for (let i = 1; i < rows.length; i++) {
+      html += "<tr>" + rows[i].map(c => `<td style='padding:6px;border-bottom:1px solid #eee;'>${c}</td>`).join("") + "</tr>";
+    }
+    html += "</table>";
+    content.innerHTML = html;
+  }
+  modal.style.display = "block";
+}
+function downloadCSV() {
+  const rows = [["Start", "End", "Duration", "Training Day", "Time", "Supplement"]];
+  document.querySelectorAll("#scheduleTable tbody tr").forEach(row => {
+    const cb = row.querySelector(".completion");
+    const timer = row.querySelector(".timer-btn");
+    if (!cb || !timer) return;
+    const id = cb.dataset.id;
+    const saved = localStorage.getItem(id);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.start && data.end) {
+          
+          const parts = id.split("_");
+          const day = parts[0];
+          const time = parts[1] + " " + parts[2];
+          const name = parts.slice(3).join(" ").replace(/_/g, " ");
+
+          rows.push([
+            formatDate(data.start),
+            formatDate(data.end),
+            data.duration || formatDuration(data.start, data.end),
+            day,
+            time.replace(/_/g, " "),
+            name.replace(/_/g, " ")
+          ]);
+        }
+      } catch {}
+    }
+  });
+  let csvContent = rows.map(r => r.map(f => `"${f}"`).join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "completed_log.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>
+</body></html>
