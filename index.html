@@ -2,16 +2,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="manifest" href="manifest.json">
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('service-worker.js')
-            .then(reg => console.log('Service worker registered:', reg))
-            .catch(err => console.error('Service worker registration failed:', err));
-        });
-      }
-    </script>
     <meta charset="utf-8">
     <title>Supplement Schedule (Full Features)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
